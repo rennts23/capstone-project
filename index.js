@@ -14,6 +14,8 @@ app.use(bodyParser.json());
 // Import routers
 const usersRouter = require("./src/users");
 const favoriteRouter = require("./src/favorite");
+const solutionRouter = require("./src/solution");
+
 
 // Endpoint utama
 app.get("/", (req, res) => {
@@ -23,6 +25,7 @@ app.get("/", (req, res) => {
 // Gunakan routers
 app.use("/api/users", usersRouter(db));
 app.use("/api/favorites", favoriteRouter(db));
+app.use("/api/solution", solutionRouter(db)); 
 
 // Jalankan server
 const PORT = process.env.PORT || 5000;
