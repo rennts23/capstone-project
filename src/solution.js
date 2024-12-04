@@ -2,65 +2,68 @@ const express = require("express");
 const admin = require("firebase-admin");
 const solutionRouter = express.Router();
 
+module.exports = (db) => {
+    const solutionCollection = db.collection("problemSolution");
 
-// Endpoint API untuk solusi
-solutionRouter.get("/", async (req, res) => {
-    try {
-        const solutionRef = admin.firestore().collection("problem-solution");
-        const solutionSnapshot = await solutionRef.get();
+    // Endpoint API untuk mengambil semua solusi
+    solutionRouter.get("/", async (req, res) => {
+        try {
+            const solutionSnapshot = await solutionCollection.get();
 
-        if (solutionSnapshot.empty) {
-            return res.status(404).json({
+            if (solutionSnapshot.empty) {
+                return res.status(404).json({
+                    status: "error",
+                    message: "No solution found.",
+                });
+            } else {
+                const solutionData = []; // Initialize an array to hold the solutions
+
+                solutionSnapshot.forEach((doc) => {
+                    solutionData.push({ id: doc.id, ...doc.data() }); // Push the document data with ID
+                });
+
+                return res.status(200).json({
+                    status: "success",
+                    solutions: solutionData, // Return the solutions array
+                });
+            }
+        } catch (error) {
+            console.error("Error retrieving solutions:", error); // Log the error
+            return res.status(500).json({
                 status: "error",
-                message: "Solution not found",
-            });
-        } else {
-            const solutionData = [];
-
-            solutionSnapshot.forEach(doc => {
-                solutionData.push(doc.data());
-            });
-
-            res.status(200).json({
-                status: "success",
-                message: "solution is ready",
-                solutionData,
+                message: "Failed to retrieve solutions.",
             });
         }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            status: "error",
-            message: "Something went wrong!",
-        });
-    }
-});
+    });
 
+    // Endpoint untuk mengambil data solusi berdasarkan ID
+    solutionRouter.get("/:idSolution", async (req, res) => {
+      try {
+          const { idSolution } = req.params;
 
-// Endpoint API untuk solusi masalah
-solutionRouter.get("/problem-solution/:id", async (req, res) => {
-    try {
-        const solutionId = req.params;
-        const solutionRef = admin.firestore().collection("problem-solution").doc(solutionId);
-        const solutionDoc = await solutionRef.get();
+          const solutionDoc = await solutionCollection.doc(idSolution).get();
 
-        if (!problem-solutionDoc.exists) {
-            return res.status(404).json({ 
-                status: "error",
-                message: "Solution not found" });
-        } else {
-        const solutionData = solutionDoc.data(); 
-        return res.status(200).json({ 
-            status: "success",
-            message: "Solution is ready", solutionData });
-        }
-    } catch (error) {
-        return res.status(500).json({ 
-            status: "error",
-            message: "Failed to search solution"
-         });
-    }
-});
+          if (!solutionDoc.exists) {
+              return res.status(404).json({
+                  status: "error",
+                  message: "Solution not found.",
+              });
+          } else {
+              const solutionData = solutionDoc.data();
 
+              return res.status(200).json({
+                  status: "success",
+                  solutionData,
+              });
+          }
+      } catch (error) {
+          console.error("Error retrieving solution by ID:", error); // Log the error for debugging
+          return res.status(500).json({
+              status: "error",
+              message: "Failed to retrieve solution.",
+          });
+      }
+  });
 
-module.exports = solutionRouter
+  return solutionRouter; // Ensure you return the router
+};
